@@ -1,0 +1,9 @@
+/.idea
+/.sonar
+node_modules
+/public
+/coverage
+/npm-debug.log
+.DS_Store
+dist
+dist.zip
