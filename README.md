@@ -17,7 +17,7 @@ The lambda CI/CD will need permissions similar to those found in [this JSON file
 npm run clean; npm run dist
 ```
 
-2. First deploy the package to S3, to assist in the next deployment step.
+2. Then deploy the package to S3, to assist in the next deployment step.
 ```
 aws cloudformation package \
     --template-file cf.json \
