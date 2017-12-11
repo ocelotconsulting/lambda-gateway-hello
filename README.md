@@ -65,3 +65,11 @@ if [ "$test_version" ]; then \
   echo "No version applicable for prod promotion."; \
 fi
 ```
+
+5. Finally, you can access the API via the gateway as in the following commands:
+
+```
+test_url=$(aws cloudformation describe-stacks --stack-name hello-api --output json | jq -r '.Stacks[0].Outputs[1].OutputValue')
+
+prod_url=$(aws cloudformation describe-stacks --stack-name hello-api --output json | jq -r '.Stacks[0].Outputs[0].OutputValue')
+```
