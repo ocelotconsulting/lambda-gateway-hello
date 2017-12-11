@@ -99,7 +99,7 @@
               "Effect": "Allow",
               "Action": "lambda:invokeFunction",
               "Resource": {
-                "Fn::ImportValue": "AuthAuthorizerARN"
+                "Fn::ImportValue": "AuthorizerARN"
               }
             }]
           }
@@ -118,7 +118,7 @@
               "Ref": "AWS::Region"
             }, ":lambda:path/2015-03-31/functions/",
             {
-              "Fn::ImportValue": "AuthAuthorizerARN"
+              "Fn::ImportValue": "AuthorizerARN"
             },
             "/invocations"
           ]]
