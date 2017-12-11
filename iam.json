@@ -1,0 +1,93 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "VisualEditor0",
+            "Effect": "Allow",
+            "Action": [
+                "iam:CreateRole",
+                "iam:AttachRolePolicy",
+                "iam:PutRolePolicy",
+                "iam:PassRole",
+                "iam:DetachRolePolicy",
+                "iam:DeleteRolePolicy",
+                "iam:GetRole",
+                "iam:DeleteRole"
+            ],
+            "Resource": [
+                "arn:aws:iam::*:role/hello-api*",
+                "arn:aws:iam::*:role/hello-api-AuthorizerRole*"
+            ]
+        },
+        {
+            "Sid": "VisualEditor4",
+            "Effect": "Allow",
+            "Action": [
+                "s3:PutObject",
+                "s3:GetObject"
+            ],
+            "Resource": [
+                "arn:aws:s3:::lambda-deployments-testing/*"
+            ]
+        },
+        {
+            "Sid": "VisualEditor5",
+            "Effect": "Allow",
+            "Action": [
+                "apigateway:DELETE",
+                "apigateway:PATCH",
+                "apigateway:GET",
+                "apigateway:PUT",
+                "apigateway:POST"
+            ],
+            "Resource": [
+                "arn:aws:apigateway:us-east-1::/restapis/*",
+                "arn:aws:apigateway:us-east-1::/restapis"
+            ]
+        },
+        {
+            "Sid": "VisualEditor6",
+            "Effect": "Allow",
+            "Action": [
+                "cloudformation:CreateChangeSet",
+                "cloudformation:UpdateStack",
+                "cloudformation:ExecuteChangeSet",
+                "cloudformation:DescribeStacks",
+                "cloudformation:CreateStack",
+                "cloudformation:DeleteStack"
+            ],
+            "Resource": [
+                "arn:aws:cloudformation:us-east-1:*:stack/hello-api/*"
+            ]
+        },
+        {
+            "Sid": "VisualEditor1",
+            "Effect": "Allow",
+            "Action": [
+                "apigateway:GetResources",
+                "lambda:CreateFunction",
+                "cloudformation:DescribeChangeSet"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "VisualEditor2",
+            "Effect": "Allow",
+            "Action": [
+                "lambda:GetFunctionConfiguration",
+                "lambda:DeleteFunction",
+                "lambda:DeleteAlias",
+                "lambda:AddPermission",
+                "lambda:RemovePermission",
+                "lambda:UpdateFunctionCode",
+                "lambda:ListVersionsByFunction",
+                "lambda:PublishVersion",
+                "lambda:CreateAlias",
+                "lambda:UpdateAlias",
+                "lambda:GetAlias",
+                "lambda:ListAliases"
+            ],
+            "Resource": "arn:aws:lambda:us-east-1:*:function:hello-api*"
+        }
+    ]
+}

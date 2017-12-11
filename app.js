@@ -1,6 +1,5 @@
 const doMyStuff = (event, context, callback) => {
   console.log(`The event is ${JSON.stringify(event)}`)
-  console.log(`Time to call callback`)
   callback(null, lambdaProxyResponse(200, `Hello from Lambda ${event.queryStringParameters.foo}!`))
 }
 
