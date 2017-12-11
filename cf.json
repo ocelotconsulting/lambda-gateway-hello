@@ -140,7 +140,7 @@
         "FunctionName": {
           "Fn::Join": ["", [{
             "Fn::GetAtt": ["HelloLambda", "Arn"]
-          }, ":" { "Ref" : "TestAliasParameter" }]]
+          }, ":", { "Ref" : "TestAliasParameter" }]]
         },
         "Principal": "apigateway.amazonaws.com",
         "SourceArn": {
