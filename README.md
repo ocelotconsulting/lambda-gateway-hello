@@ -8,17 +8,17 @@ This lambda utilizes another related lambda used as a [Custom Authorizer](http:/
 
 ## IAM
 
-The lambda CI/CD will need permissions similar to those found in [this JSON file](./iam.json)
+The lambda CI/CD will need permissions similar to those found in [this JSON file](./iam.json). Some of the permissions aren't completely necessary unless you are modifying DNS/adding a custom domain to the API, but if you check out the [commit history](https://github.com/ocelotconsulting/lambda-gateway-hello/commit/160522ed324c14796b62e798ab42e350c3a4efd6#diff-93739abfc3a09478d61aafc4275296fb) it isn't too difficult to figure out.
 
 ## Deployment
 
 1. First build the zip file that will be used as the lambda function source
-```
+```bash
 npm run clean; npm run dist
 ```
 
 2. Then deploy the package to S3, to assist in the next deployment step.
-```
+```bash
 aws cloudformation package \
     --template-file cf.json \
     --s3-bucket <artifact-bucket-here> \
@@ -26,7 +26,7 @@ aws cloudformation package \
 ```
 
 3. Next, deploy the stack to AWS, so that it can be executed.
-```
+```bash
 aws cloudformation deploy \
     --template-file cf-packaged.yaml \
     --stack-name hello-api \
@@ -37,7 +37,7 @@ aws cloudformation deploy \
 
 To create the initial `TEST` version and set the alias to it:
 
-```
+```bash
 lambda_arn=$(aws cloudformation describe-stacks --stack-name hello-api --output json | jq -r '.Stacks[0].Outputs[2].OutputValue')
 
 lambda_version=$(aws lambda publish-version \
@@ -52,7 +52,7 @@ aws lambda update-alias \
 
 Now that `TEST` has been assigned to a version, from time to time we will want to update `PROD` to the latest version under `TEST`. In order do do that, it is similar to the last step.
 
-```
+```bash
 test_version=$(aws lambda list-aliases \
   --function-name $lambda_arn \
   --output json | jq -r '.Aliases | map(select(.Name == "TEST")) | .[].FunctionVersion')
@@ -68,20 +68,19 @@ fi
 
 5. Finally, you can access the API via the gateway as in the following commands:
 
-```
+```bash
 test_url=$(aws cloudformation describe-stacks --stack-name hello-api --output json | jq -r '.Stacks[0].Outputs[1].OutputValue')
 
 prod_url=$(aws cloudformation describe-stacks --stack-name hello-api --output json | jq -r '.Stacks[0].Outputs[0].OutputValue')
 ```
 
 ## Optionally link a domain name
-In order to perform this, you must have imported a certificate into AWS Certificate Manager (ACM) prior to this step, via some other means. Cloudformation supports creating a certificate in ACM, but it is not difficult and I don't want to list valid certificate files (including private keys) here.
 
-1. First import your certificate for your domain. You can use cloudformation, sdk [like this](https://github.com/ocelotconsulting/node-letsencrypt-lambda/blob/master/bin/importToACM.js), or the CLI.
+1. First import your certificate for your domain. You can use cloudformation, sdk [like this](https://github.com/ocelotconsulting/node-letsencrypt-lambda/blob/master/bin/importToACM.js), or the CLI. I've chosen not to do it as part of the cloudformation template here.
 
 2. After the certificate is imported, get the ARN for the certificate, and the hosted zone which will host the DNS alias record, and run the [domain cloudformation template](./cf-domain.json).
 
-```
+```bash
 cert_arn=$(aws acm list-certificates | jq -r '.CertificateSummaryList| .[] | select(.DomainName == "hello.mydomain.com") | .CertificateArn')
 
 hosted_zone=$(aws route53 list-hosted-zones | jq -r '.HostedZones | .[] | select(.Name == "mydomain.com.") | .Id')
