@@ -73,3 +73,18 @@ test_url=$(aws cloudformation describe-stacks --stack-name hello-api --output js
 
 prod_url=$(aws cloudformation describe-stacks --stack-name hello-api --output json | jq -r '.Stacks[0].Outputs[0].OutputValue')
 ```
+
+## Optionally link a domain name
+In order to perform this, you must have imported a certificate into AWS Certificate Manager (ACM) prior to this step, via some other means. Cloudformation supports creating a certificate in ACM, but it is not difficult and I don't want to list valid certificate files (including private keys) here.
+
+1. First import your certificate for your domain. You can use cloudformation, sdk [like this](https://github.com/ocelotconsulting/node-letsencrypt-lambda/blob/master/bin/importToACM.js), or the CLI.
+
+2. After the certificate is imported, get the ARN for the certificate, and the hosted zone which will host the DNS alias record, and run the [domain cloudformation template](./cf-domain.json).
+
+```
+cert_arn=$(aws acm list-certificates | jq -r '.CertificateSummaryList| .[] | select(.DomainName == "hello.mydomain.com") | .CertificateArn')
+
+hosted_zone=$(aws route53 list-hosted-zones | jq -r '.HostedZones | .[] | select(.Name == "mydomain.com.") | .Id')
+
+aws cloudformation deploy --template-file cf-domain.json --stack-name hello-api-domain --capabilities CAPABILITY_IAM --parameter-overrides APICertificate=$cert_arn HostedZoneId=$hosted_zone
+```

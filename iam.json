@@ -42,7 +42,10 @@
             ],
             "Resource": [
                 "arn:aws:apigateway:us-east-1::/restapis/*",
-                "arn:aws:apigateway:us-east-1::/restapis"
+                "arn:aws:apigateway:us-east-1::/restapis",
+                "arn:aws:apigateway:us-east-1::/domainnames/hello.mydomain.com/*",
+                "arn:aws:apigateway:us-east-1::/domainnames/hello.mydomain.com",
+                "arn:aws:apigateway:us-east-1::/domainnames"
             ]
         },
         {
@@ -57,7 +60,21 @@
                 "cloudformation:DeleteStack"
             ],
             "Resource": [
-                "arn:aws:cloudformation:us-east-1:*:stack/hello-api/*"
+                "arn:aws:cloudformation:us-east-1:*:stack/hello-api*/*"
+            ]
+        },
+        {
+            "Sid": "VisualEditor7",
+            "Effect": "Allow",
+            "Action": [
+                "route53:GetHostedZone",
+                "route53:ChangeResourceRecordSets",
+                "route53:ListResourceRecordSets",
+                "route53:GetChange"
+            ],
+            "Resource": [
+                "arn:aws:route53:::hostedzone/*",
+                "arn:aws:route53:::change/*"
             ]
         },
         {
@@ -66,7 +83,10 @@
             "Action": [
                 "apigateway:GetResources",
                 "lambda:CreateFunction",
-                "cloudformation:DescribeChangeSet"
+                "cloudformation:DescribeChangeSet",
+                "acm:ListCertificates",
+                "cloudfront:UpdateDistribution",
+                "route53:ListHostedZones"
             ],
             "Resource": "*"
         },
