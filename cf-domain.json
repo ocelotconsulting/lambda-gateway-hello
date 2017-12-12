@@ -1,0 +1,105 @@
+{
+  "Parameters": {
+    "TestBasePath": {
+      "Type": "String",
+      "Default": "v2"
+    },
+    "ProdBasePath": {
+      "Type": "String",
+      "Default": "v1"
+    },
+    "HelloAPIDomainName": {
+      "Type": "String",
+      "Default": "hello.mydomain.com."
+    },
+    "APICertificate": {
+      "Type": "String",
+      "Default": "replace-me or set on CLI"
+    },
+    "HostedZoneId" : {
+      "Type" : "String",
+      "Default": "replace-me or set on CLI"
+    }
+  },
+  "Mappings": {
+    "CloudFront": {
+      "HostedZone": {
+        "Id": "Z2FDTNDATAQYW2"
+      }
+    }
+  },
+  "Resources": {
+    "APIDomainName": {
+      "Type": "AWS::ApiGateway::DomainName",
+      "Properties": {
+        "CertificateArn": {
+          "Ref": "APICertificate"
+        },
+        "DomainName": {
+          "Ref": "HelloAPIDomainName"
+        }
+      }
+    },
+    "TestBasePathMapping": {
+      "Type": "AWS::ApiGateway::BasePathMapping",
+      "Properties": {
+        "BasePath": {
+          "Ref": "TestBasePath"
+        },
+        "DomainName": {
+          "Ref": "APIDomainName"
+        },
+        "RestApiId": {
+          "Fn::ImportValue": "HelloRestAPIId"
+        },
+        "Stage": {
+          "Ref": "TestBasePath"
+        }
+      }
+    },
+    "ProdBasePathMapping": {
+      "Type": "AWS::ApiGateway::BasePathMapping",
+      "Properties": {
+        "BasePath": {
+          "Ref": "ProdBasePath"
+        },
+        "DomainName": {
+          "Ref": "APIDomainName"
+        },
+        "RestApiId": {
+          "Fn::ImportValue": "HelloRestAPIId"
+        },
+        "Stage": {
+          "Ref": "ProdBasePath"
+        }
+      }
+    },
+    "DNSRecord": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "AliasTarget": {
+          "DNSName": {
+            "Fn::GetAtt": [
+              "APIDomainName",
+              "DistributionDomainName"
+            ]
+          },
+          "HostedZoneId": { "Fn::FindInMap": ["CloudFront", "HostedZone", "Id"] }
+        },
+        "HostedZoneId": { "Ref": "HostedZoneId" },
+        "Name": { "Ref": "HelloAPIDomainName" },
+        "Type": "A"
+      }
+    }
+  },
+  "Outputs": {
+    "domainName": {
+      "Value": {
+        "Fn::GetAtt": [
+          "APIDomainName",
+          "DistributionDomainName"
+        ]
+      }
+    }
+  }
+}

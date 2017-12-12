@@ -334,6 +334,13 @@
       "Export" : {
         "Name" : "HelloLambdaARN"
       }
+    },
+    "RestAPIId": {
+      "Description": "The API Id of this API.",
+      "Value": { "Ref": "RestApi" },
+      "Export" : {
+        "Name": "HelloRestAPIId"
+      }
     }
   }
 }
