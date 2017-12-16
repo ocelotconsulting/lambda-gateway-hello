@@ -38,7 +38,7 @@ aws cloudformation deploy \
 To create the initial `TEST` version and set the alias to it:
 
 ```bash
-lambda_arn=$(aws cloudformation describe-stacks --stack-name hello-api --output json | jq -r '.Stacks[0].Outputs[2].OutputValue')
+lambda_arn=$(aws cloudformation describe-stacks --stack-name hello-api --output json | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "ARN") | .OutputValue')
 
 lambda_version=$(aws lambda publish-version \
     --function-name $lambda_arn \
@@ -69,9 +69,9 @@ fi
 5. Finally, you can access the API via the gateway as in the following commands:
 
 ```bash
-test_url=$(aws cloudformation describe-stacks --stack-name hello-api --output json | jq -r '.Stacks[0].Outputs[1].OutputValue')
+test_url=$(aws cloudformation describe-stacks --stack-name hello-api --output json | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "V2InvokeURL") | .OutputValue')
 
-prod_url=$(aws cloudformation describe-stacks --stack-name hello-api --output json | jq -r '.Stacks[0].Outputs[0].OutputValue')
+prod_url=$(aws cloudformation describe-stacks --stack-name hello-api --output json | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "V1InvokeURL") | .OutputValue')
 ```
 
 ## Optionally link a domain name
@@ -81,9 +81,17 @@ prod_url=$(aws cloudformation describe-stacks --stack-name hello-api --output js
 2. After the certificate is imported, get the ARN for the certificate, and the hosted zone which will host the DNS alias record, and run the [domain cloudformation template](./cf-domain.json).
 
 ```bash
-cert_arn=$(aws acm list-certificates | jq -r '.CertificateSummaryList| .[] | select(.DomainName == "hello.mydomain.com") | .CertificateArn')
+cert_arn=$(aws acm list-certificates | jq -r '.CertificateSummaryList[] | select(.DomainName == "hello.mydomain.com") | .CertificateArn')
 
-hosted_zone=$(aws route53 list-hosted-zones | jq -r '.HostedZones | .[] | select(.Name == "mydomain.com.") | .Id')
+hosted_zone=$(aws route53 list-hosted-zones | jq -r '.HostedZones[] | select(.Name == "mydomain.com.") | .Id')
 
 aws cloudformation deploy --template-file cf-domain.json --stack-name hello-api-domain --capabilities CAPABILITY_IAM --parameter-overrides APICertificate=$cert_arn HostedZoneId=$hosted_zone
+```
+
+## Swagger Alternative
+
+You can substitute the [swagger CloudFormation template](./cf-swagger.json) for the original CloudFormation template if you would prefer to create the AWS resources via documentation. If you do run the swagger template, when completed you can export the documentation using either the [secured HTTP](Making HTTP Requests) [method](http://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-export-api.html) or [utilizing the CLI](http://docs.aws.amazon.com/cli/latest/reference/apigateway/get-export.html) like the following:
+
+```bash
+aws apigateway get-export --rest-api-id 1u0vc0jc2g --stage-name v1 --export-type swagger swagger.json
 ```
