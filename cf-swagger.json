@@ -1,0 +1,343 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "This stack is for a lambda which will merely reply hello",
+  "Resources": {
+    "HelloLambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [{
+            "Effect": "Allow",
+            "Principal": {
+              "Service": ["lambda.amazonaws.com"]
+            },
+            "Action": ["sts:AssumeRole"]
+          }]
+        },
+        "ManagedPolicyArns": ["arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"]
+      }
+    },
+    "HelloLambda": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": "./dist.zip",
+        "Handler": "app.handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": ["HelloLambdaRole", "Arn"]
+        },
+        "Runtime": "nodejs6.10",
+        "Timeout": 60
+      }
+    },
+    "HelloTestAlias": {
+      "DependsOn": "HelloLambda",
+      "Type" : "AWS::Lambda::Alias",
+      "Properties" : {
+        "FunctionName" : {"Ref": "HelloLambda"},
+        "FunctionVersion" : "$LATEST",
+        "Name" : { "Ref" : "TestAliasParameter" }
+      }
+    },
+
+    "HelloProdAlias": {
+      "DependsOn": "HelloLambda",
+      "Type" : "AWS::Lambda::Alias",
+      "Properties" : {
+        "FunctionName" : {"Ref": "HelloLambda"},
+        "FunctionVersion" : "$LATEST",
+        "Name" : { "Ref" : "ProdAliasParameter" }
+      }
+    },
+    "RestApi": {
+      "Type": "AWS::ApiGateway::RestApi",
+      "Properties": {
+        "Name": "HelloAPI Swagger",
+        "Body": {
+          "swagger": "2.0",
+          "info": {
+            "version": "2016-08-18T18:08:34Z",
+            "title": "Hello World API"
+          },
+          "basePath": "/",
+          "schemes": ["https"],
+          "paths": {
+            "/hello": {
+              "get": {
+                "parameters": [{
+                  "name": "foo",
+                  "in": "query",
+                  "required": true,
+                  "type": "string"
+                }],
+                "security" : [ {
+                  "api-authorizer" : [ ]
+                } ],
+                "produces": ["application/json"],
+                "responses": {
+                  "200": {
+                    "description": "200 response"
+                  }
+                },
+                "x-amazon-apigateway-integration": {
+                  "requestTemplates": {
+                    "application/json": "{\"action\": \"get\", \"body\": $input.json('$')}"
+                  },
+                  "uri": {
+                    "Fn::Join": ["", ["arn:aws:apigateway:", {
+                      "Ref": "AWS::Region"
+                    }, ":lambda:path/2015-03-31/functions/", {
+                      "Fn::GetAtt": ["HelloLambda", "Arn"]
+                    }, ":${stageVariables.HELLO_LAMBDA_VERSION}",
+                    "/invocations"]]
+                  },
+                  "responses": {
+                    "default": {
+                      "statusCode": "200"
+                    }
+                  },
+                  "httpMethod": "POST",
+                  "type": "aws_proxy"
+                }
+              }
+            }
+          },
+          "securityDefinitions" : {
+            "api-authorizer" : {
+              "type" : "apiKey",
+              "name" : "Authorization",
+              "in" : "header",
+              "x-amazon-apigateway-authtype" : "custom",
+              "x-amazon-apigateway-authorizer" : {
+                "type" : "request",
+                "identitySource" : "method.request.header.Authorization",
+                "authorizerUri" : {
+                  "Fn::Join": ["", ["arn:aws:apigateway:", {
+                      "Ref": "AWS::Region"
+                    }, ":lambda:path/2015-03-31/functions/",
+                    {
+                      "Fn::ImportValue": "AuthorizerARN"
+                    },
+                    "/invocations"
+                  ]]
+                },
+                "authorizerCredentials" : {
+                  "Fn::GetAtt": ["AuthorizerRole", "Arn"]
+                },
+                "identityValidationExpression" : "^Bearer .*$",
+                "authorizerResultTtlInSeconds" : 300
+              }
+            }
+          }
+        }
+      }
+    },
+    "DocumentationVersion": {
+        "Type": "AWS::ApiGateway::DocumentationVersion",
+        "Properties": {
+            "Description": "First version of documentation.",
+            "DocumentationVersion": "1.0",
+            "RestApiId": {
+                "Ref": "RestApi"
+            }
+        },
+        "DependsOn": "RestApi"
+    },
+    "AuthorizerRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [{
+            "Effect": "Allow",
+            "Principal": {
+              "Service": ["apigateway.amazonaws.com"]
+            },
+            "Action": ["sts:AssumeRole"]
+          }]
+        },
+        "Policies": [{
+          "PolicyName": "lambda",
+          "PolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [{
+              "Effect": "Allow",
+              "Action": "lambda:invokeFunction",
+              "Resource": {
+                "Fn::ImportValue": "AuthorizerARN"
+              }
+            }]
+          }
+        }]
+      }
+    },
+    "TestLambdaPermission": {
+      "DependsOn": "HelloTestAlias",
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:invokeFunction",
+        "FunctionName": {
+          "Fn::Join": ["", [{
+            "Fn::GetAtt": ["HelloLambda", "Arn"]
+          }, ":", { "Ref" : "TestAliasParameter" }]]
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": ["", ["arn:aws:execute-api:", {
+            "Ref": "AWS::Region"
+          }, ":", {
+            "Ref": "AWS::AccountId"
+          }, ":", {
+            "Ref": "RestApi"
+          }, "/*"]]
+        }
+      }
+    },
+    "ProdLambdaPermission": {
+      "DependsOn": "HelloProdAlias",
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:invokeFunction",
+        "FunctionName": {
+          "Fn::Join": ["", [{
+            "Fn::GetAtt": ["HelloLambda", "Arn"]
+          }, ":", { "Ref" : "ProdAliasParameter" }]]
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": ["", ["arn:aws:execute-api:", {
+            "Ref": "AWS::Region"
+          }, ":", {
+            "Ref": "AWS::AccountId"
+          }, ":", {
+            "Ref": "RestApi"
+          }, "/*"]]
+        }
+      }
+    },
+    "ProdDeployment": {
+      "DependsOn": "DocumentationVersion",
+      "Type": "AWS::ApiGateway::Deployment",
+      "Properties": {
+        "RestApiId": {"Ref" : "RestApi"},
+        "Description": "Hello deployment",
+        "StageName": { "Ref" : "ProdStageNameParameter" },
+        "StageDescription": {
+          "StageName": { "Ref" : "ProdStageNameParameter" },
+          "Description": "Prod Stage for Hello Lambda",
+          "Variables": {
+            "issuer": "https://stsdev.rgare.com/secureauth31",
+            "HELLO_LAMBDA_VERSION": { "Ref" : "ProdAliasParameter" }
+          },
+          "DocumentationVersion": "1.0",
+          "MethodSettings": [{
+            "ResourcePath": "/",
+            "HttpMethod": "GET",
+            "MetricsEnabled": "true",
+          }]
+        }
+      }
+    },
+    "TestDeployment": {
+      "DependsOn": "DocumentationVersion",
+      "Type": "AWS::ApiGateway::Deployment",
+      "Properties": {
+        "RestApiId": {"Ref" : "RestApi"},
+        "Description": "The second version of hello deployment",
+        "StageName": { "Ref" : "TestStageNameParameter" },
+        "StageDescription": {
+          "StageName": { "Ref" : "TestStageNameParameter" },
+          "Description": "Second Stage for Hello Lambda",
+          "Variables": {
+            "issuer": "https://stsdev.rgare.com/secureauth31",
+            "HELLO_LAMBDA_VERSION": { "Ref" : "TestAliasParameter" }
+          },
+          "DocumentationVersion": "1.0",
+          "MethodSettings": [{
+            "ResourcePath": "/",
+            "HttpMethod": "GET",
+            "MetricsEnabled": "true",
+          }]
+        }
+      }
+    }
+  },
+  "Parameters" : {
+    "PathPartParameter" : {
+      "Type" : "String",
+      "Default" : "hello",
+      "Description" : "The name of the resource path, present at the end of the invocation URL."
+    },
+    "TestStageNameParameter" : {
+      "Type" : "String",
+      "Default" : "v2",
+      "Description" : "The name of the stage, present within the invocation URL."
+    },
+    "TestAliasParameter" : {
+      "Type" : "String",
+      "Default" : "TEST",
+      "Description" : "The name value for the alias."
+    },
+    "ProdStageNameParameter" : {
+      "Type" : "String",
+      "Default" : "v1",
+      "Description" : "The name of the stage, present within the invocation URL."
+    },
+    "ProdAliasParameter" : {
+      "Type" : "String",
+      "Default" : "PROD",
+      "Description" : "The name value for the alias."
+    }
+  },
+  "Outputs": {
+    "TestInvokeURL" : {
+      "Description" : "The Test URL to Invoke",
+      "Value" : {
+        "Fn::Join": ["", ["https://", {
+          "Ref": "RestApi"
+        }, ".execute-api.", {
+          "Ref": "AWS::Region"
+        }, ".amazonaws.com/", {
+          "Ref" : "TestStageNameParameter"
+        }, "/", { "Ref" : "PathPartParameter"
+        }]]
+      },
+      "Export" : {
+        "Name" : "HelloAPITestInvokeURL"
+      }
+    },
+    "ProdInvokeURL" : {
+      "Description" : "The Test URL to Invoke",
+      "Value" : {
+        "Fn::Join": ["", ["https://", {
+          "Ref": "RestApi"
+        }, ".execute-api.", {
+          "Ref": "AWS::Region"
+        }, ".amazonaws.com/", {
+          "Ref" : "ProdStageNameParameter"
+        }, "/", { "Ref" : "PathPartParameter"
+        }]]
+      },
+      "Export" : {
+        "Name" : "HelloAPIProdInvokeURL"
+      }
+    },
+    "ARN" : {
+      "Description" : "The ARN of the Hello Lambda",
+      "Value" : {
+        "Fn::GetAtt": ["HelloLambda", "Arn"]
+      },
+      "Export" : {
+        "Name" : "HelloLambdaARN"
+      }
+    },
+    "RestAPIId": {
+      "Description": "The API Id of this API.",
+      "Value": { "Ref": "RestApi" },
+      "Export" : {
+        "Name": "HelloRestAPIId"
+      }
+    }
+  }
+}

@@ -10,7 +10,7 @@
     },
     "HelloAPIDomainName": {
       "Type": "String",
-      "Default": "hello.mydomain.com."
+      "Default": "hello.mydomain.com"
     },
     "APICertificate": {
       "Type": "String",
