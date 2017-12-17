@@ -69,9 +69,9 @@ fi
 5. Finally, you can access the API via the gateway as in the following commands:
 
 ```bash
-test_url=$(aws cloudformation describe-stacks --stack-name hello-api --output json | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "V2InvokeURL") | .OutputValue')
+test_url=$(aws cloudformation describe-stacks --stack-name hello-api --output json | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "TestInvokeURL") | .OutputValue')
 
-prod_url=$(aws cloudformation describe-stacks --stack-name hello-api --output json | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "V1InvokeURL") | .OutputValue')
+prod_url=$(aws cloudformation describe-stacks --stack-name hello-api --output json | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "ProdInvokeURL") | .OutputValue')
 ```
 
 ## Optionally link a domain name
