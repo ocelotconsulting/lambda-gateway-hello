@@ -93,5 +93,5 @@ aws cloudformation deploy --template-file cf-domain.json --stack-name hello-api-
 You can substitute the [swagger CloudFormation template](./cf-swagger.json) for the original CloudFormation template if you would prefer to create the AWS resources via documentation. If you do run the swagger template, when completed you can export the documentation using either the [secured HTTP](Making HTTP Requests) [method](http://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-export-api.html) or [utilizing the CLI](http://docs.aws.amazon.com/cli/latest/reference/apigateway/get-export.html) like the following:
 
 ```bash
-aws apigateway get-export --rest-api-id 1u0vc0jc2g --stage-name v1 --export-type swagger swagger.json
+aws apigateway get-export --rest-api-id <api-id> --stage-name v1 --export-type swagger swagger.json
 ```
