@@ -227,7 +227,6 @@
           "StageName": { "Ref" : "ProdStageNameParameter" },
           "Description": "Prod Stage for Hello Lambda",
           "Variables": {
-            "issuer": "https://stsdev.rgare.com/secureauth31",
             "HELLO_LAMBDA_VERSION": { "Ref" : "ProdAliasParameter" }
           },
           "DocumentationVersion": "1.0",
@@ -250,7 +249,6 @@
           "StageName": { "Ref" : "TestStageNameParameter" },
           "Description": "Second Stage for Hello Lambda",
           "Variables": {
-            "issuer": "https://stsdev.rgare.com/secureauth31",
             "HELLO_LAMBDA_VERSION": { "Ref" : "TestAliasParameter" }
           },
           "DocumentationVersion": "1.0",
